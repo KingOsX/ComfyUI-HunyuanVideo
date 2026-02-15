@@ -1,0 +1,121 @@
+{
+  "1": {
+    "class_type": "UNETLoader",
+    "_meta": {"title": "Load I2V Model"},
+    "inputs": {
+      "unet_name": "hunyuanvideo1.5_720p_i2v_cfg_distilled_fp8_scaled.safetensors",
+      "weight_dtype": "default"
+    }
+  },
+  "2": {
+    "class_type": "DualCLIPLoader",
+    "_meta": {"title": "Load Text Encoders (Qwen + ByT5)"},
+    "inputs": {
+      "clip_name1": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+      "clip_name2": "byt5_small_glyphxl_fp16.safetensors",
+      "type": "hunyuan_video"
+    }
+  },
+  "3": {
+    "class_type": "VAELoader",
+    "_meta": {"title": "Load VAE"},
+    "inputs": {
+      "vae_name": "hunyuanvideo15_vae_fp16.safetensors"
+    }
+  },
+  "4": {
+    "class_type": "CLIPVisionLoader",
+    "_meta": {"title": "Load CLIP Vision (SigCLIP)"},
+    "inputs": {
+      "clip_name": "sigclip_vision_patch14_384.safetensors"
+    }
+  },
+  "5": {
+    "class_type": "LoadImage",
+    "_meta": {"title": "Load Reference Image"},
+    "inputs": {
+      "image": "example.png"
+    }
+  },
+  "6": {
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Positive Prompt"},
+    "inputs": {
+      "text": "The scene comes alive with natural motion, cinematic camera movement, smooth animation, high quality, detailed, 4K",
+      "clip": ["2", 0]
+    }
+  },
+  "7": {
+    "class_type": "CLIPTextEncode",
+    "_meta": {"title": "Negative Prompt (empty for cfg_distilled)"},
+    "inputs": {
+      "text": "",
+      "clip": ["2", 0]
+    }
+  },
+  "8": {
+    "class_type": "CLIPVisionEncode",
+    "_meta": {"title": "Encode Reference Image"},
+    "inputs": {
+      "clip_vision": ["4", 0],
+      "image": ["5", 0]
+    }
+  },
+  "9": {
+    "class_type": "unCLIPConditioning",
+    "_meta": {"title": "Combine Text + Image Conditioning"},
+    "inputs": {
+      "conditioning": ["6", 0],
+      "clip_vision_output": ["8", 0],
+      "strength": 1.0,
+      "noise_augmentation": 0.0
+    }
+  },
+  "10": {
+    "class_type": "EmptyHunyuanLatentVideo",
+    "_meta": {"title": "Empty Latent (1280x720, 61 frames)"},
+    "inputs": {
+      "width": 1280,
+      "height": 720,
+      "length": 61,
+      "batch_size": 1
+    }
+  },
+  "11": {
+    "class_type": "KSampler",
+    "_meta": {"title": "Sampler (CFG=1, 20 steps)"},
+    "inputs": {
+      "model": ["1", 0],
+      "positive": ["9", 0],
+      "negative": ["7", 0],
+      "latent_image": ["10", 0],
+      "seed": 987654321,
+      "steps": 20,
+      "cfg": 1.0,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1.0
+    }
+  },
+  "12": {
+    "class_type": "VAEDecode",
+    "_meta": {"title": "VAE Decode"},
+    "inputs": {
+      "samples": ["11", 0],
+      "vae": ["3", 0]
+    }
+  },
+  "13": {
+    "class_type": "VHS_VideoCombine",
+    "_meta": {"title": "Save Video (MP4)"},
+    "inputs": {
+      "images": ["12", 0],
+      "frame_rate": 24,
+      "loop_count": 0,
+      "filename_prefix": "hunyuan_i2v",
+      "format": "video/h264-mp4",
+      "pingpong": false,
+      "save_output": true
+    }
+  }
+}
