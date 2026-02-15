@@ -187,14 +187,23 @@ ok "ComfyUI ready"
 # ============================================================================
 # 3. Install Python dependencies
 # ============================================================================
+log "Upgrading pip..."
+python -m pip install --upgrade pip 2>&1 | tee -a "$LOG_FILE" || true
+
 log "Installing ComfyUI Python dependencies..."
-pip install -q -r requirements.txt 2>&1 | tee -a "$LOG_FILE" || warn "Some pip dependencies failed"
-pip install -q sqlalchemy alembic aiohttp aiosqlite 2>&1 | tee -a "$LOG_FILE" || warn "Some extra dependencies failed"
-# Ensure sqlalchemy is actually installed (critical for ComfyUI startup)
-python -c "import sqlalchemy" 2>/dev/null || {
-  warn "sqlalchemy not found, forcing reinstall..."
-  pip install --force-reinstall sqlalchemy alembic 2>&1 | tee -a "$LOG_FILE"
-}
+pip install -r requirements.txt 2>&1 | tee -a "$LOG_FILE" || warn "Some pip dependencies failed"
+
+log "Installing extra dependencies..."
+pip install sqlalchemy alembic aiohttp aiosqlite 2>&1 | tee -a "$LOG_FILE" || warn "Some extra dependencies failed"
+
+# Verify critical modules are installed
+CRITICAL_MODULES="torch sqlalchemy alembic aiohttp tqdm yaml PIL numpy"
+for mod in $CRITICAL_MODULES; do
+  python -c "import $mod" 2>/dev/null || {
+    warn "Module '$mod' missing, attempting install..."
+    pip install "$mod" 2>&1 | tee -a "$LOG_FILE" || true
+  }
+done
 ok "ComfyUI dependencies installed"
 
 # ============================================================================
