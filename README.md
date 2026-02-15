@@ -9,13 +9,13 @@ HunyuanVideo 1.5 est un modele text-to-video de 8.3 milliards de parametres, 2x 
 ### Methode 1 : Clone + Run
 
 ```bash
-git clone https://github.com/VOTRE_USER/ComfyUI-HunyuanVideo.git && bash ComfyUI-HunyuanVideo/install.sh
+git clone https://github.com/KingOsX/ComfyUI-HunyuanVideo.git && bash ComfyUI-HunyuanVideo/install.sh
 ```
 
 ### Methode 2 : Directe (sans clone)
 
 ```bash
-wget -qO- https://raw.githubusercontent.com/VOTRE_USER/ComfyUI-HunyuanVideo/main/install.sh | bash
+wget -qO- https://raw.githubusercontent.com/KingOsX/ComfyUI-HunyuanVideo/main/install.sh | bash
 ```
 
 ### Methode 3 : Copier-coller dans le terminal RunPod
