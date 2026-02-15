@@ -189,7 +189,12 @@ ok "ComfyUI ready"
 # ============================================================================
 log "Installing ComfyUI Python dependencies..."
 pip install -q -r requirements.txt 2>&1 | tee -a "$LOG_FILE" || warn "Some pip dependencies failed"
-pip install -q sqlalchemy alembic aiohttp 2>&1 | tee -a "$LOG_FILE" || warn "Some extra dependencies failed"
+pip install -q sqlalchemy alembic aiohttp aiosqlite 2>&1 | tee -a "$LOG_FILE" || warn "Some extra dependencies failed"
+# Ensure sqlalchemy is actually installed (critical for ComfyUI startup)
+python -c "import sqlalchemy" 2>/dev/null || {
+  warn "sqlalchemy not found, forcing reinstall..."
+  pip install --force-reinstall sqlalchemy alembic 2>&1 | tee -a "$LOG_FILE"
+}
 ok "ComfyUI dependencies installed"
 
 # ============================================================================
