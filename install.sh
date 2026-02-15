@@ -212,28 +212,43 @@ ok "ComfyUI dependencies installed"
 log "Installing custom nodes..."
 cd "$COMFY_DIR/custom_nodes"
 
-declare -A NODES=(
-  ["ComfyUI-VideoHelperSuite"]="https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git"
-  ["ComfyUI-Manager"]="https://github.com/ltdrdata/ComfyUI-Manager.git"
-)
-
-if [ "$LIGHT_MODE" != true ]; then
-  NODES["ComfyUI-KJNodes"]="https://github.com/kijai/ComfyUI-KJNodes.git"
-fi
-
-for name in "${!NODES[@]}"; do
+install_node() {
+  local name="$1"
+  local url="$2"
   if [ -d "$name" ]; then
     log "  Updating $name..."
-    (cd "$name" && git pull --quiet) || warn "  Failed to update $name, using existing version"
+    (cd "$name" && git pull --quiet) || warn "  Failed to update $name"
   else
     log "  Cloning $name..."
-    git clone --quiet "${NODES[$name]}" || warn "  Failed to clone $name"
+    git clone "$url" "$name" 2>&1 | tee -a "$LOG_FILE"
+    if [ ! -d "$name" ]; then
+      err "  FAILED to clone $name - retrying..."
+      git clone "$url" "$name" 2>&1 | tee -a "$LOG_FILE" || err "  $name clone failed after retry"
+    fi
   fi
   if [ -f "$name/requirements.txt" ]; then
-    pip install -q -r "$name/requirements.txt" 2>&1 | tee -a "$LOG_FILE" || warn "  Some deps for $name failed"
+    pip install -r "$name/requirements.txt" 2>&1 | tee -a "$LOG_FILE" || warn "  Some deps for $name failed"
   fi
-done
-ok "Custom nodes installed"
+}
+
+# ComfyUI-Manager (essential - install first)
+install_node "ComfyUI-Manager" "https://github.com/ltdrdata/ComfyUI-Manager.git"
+
+# VideoHelperSuite (for video output)
+install_node "ComfyUI-VideoHelperSuite" "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git"
+
+# KJNodes (utility nodes)
+if [ "$LIGHT_MODE" != true ]; then
+  install_node "ComfyUI-KJNodes" "https://github.com/kijai/ComfyUI-KJNodes.git"
+fi
+
+# Verify ComfyUI-Manager is installed
+if [ -d "ComfyUI-Manager" ]; then
+  ok "Custom nodes installed (ComfyUI-Manager verified)"
+else
+  err "ComfyUI-Manager is MISSING! Install manually:"
+  err "  cd $COMFY_DIR/custom_nodes && git clone https://github.com/ltdrdata/ComfyUI-Manager.git"
+fi
 
 # ============================================================================
 # 5. Create model directories
